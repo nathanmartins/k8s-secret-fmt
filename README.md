@@ -19,6 +19,10 @@ Download the latest release from the [releases page](https://github.com/nathanma
 curl -L https://github.com/nathanmartins/k8s-secret-fmt/releases/download/v1.0.0/k8s-secret-fmt_Darwin_x86_64.tar.gz | tar xz
 sudo mv k8s-secret-fmt /usr/local/bin/
 
+# For macOS (Apple Silicon/ARM64)
+curl -L https://github.com/nathanmartins/k8s-secret-fmt/releases/download/v1.0.0/k8s-secret-fmt_Darwin_arm64.tar.gz | tar xz
+sudo mv k8s-secret-fmt /usr/local/bin/
+
 # For Linux (x86_64)
 curl -L https://github.com/nathanmartins/k8s-secret-fmt/releases/download/v1.0.0/k8s-secret-fmt_Linux_x86_64.tar.gz | tar xz
 sudo mv k8s-secret-fmt /usr/local/bin/
@@ -32,6 +36,14 @@ If you have Go installed, you can build from source:
 git clone https://github.com/nathanmartins/k8s-secret-fmt.git
 cd k8s-secret-fmt
 go install
+```
+
+### Using Go Install
+
+If you have Go installed, you can install directly using:
+
+```bash
+go install github.com/nathanmartins/k8s-secret-fmt@latest
 ```
 
 ## Usage
