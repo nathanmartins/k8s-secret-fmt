@@ -29,8 +29,31 @@ metadata:
   name: my-secret
 type: Opaque
 stringData:
-  username: 'admin'
   api-key: '1234-5678-abcd'
+  username: 'admin'
+`,
+		},
+		{
+			name: "Secret with keys in non-alphabetical order",
+			input: `apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+stringData:
+  zebra: striped
+  apple: red
+  banana: yellow
+`,
+			expected: `apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+stringData:
+  apple: 'red'
+  banana: 'yellow'
+  zebra: 'striped'
 `,
 		},
 		{

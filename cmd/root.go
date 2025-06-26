@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
@@ -99,32 +100,43 @@ func processYAML(input []byte) ([]byte, error) {
 	result := strings.Join(lines[:stringDataIndex+1], "\n")
 
 	// Add each stringData entry with the correct format
-	for key, value := range secret.StringData {
-		// Get the indentation from the original input
-		indentation := ""
-		for i := stringDataIndex + 1; i < len(lines); i++ {
-			line := lines[i]
-			if strings.TrimSpace(line) == "" {
-				continue
-			}
+	// Get all keys and sort them alphabetically
+	keys := make([]string, 0, len(secret.StringData))
+	for key := range secret.StringData {
+		keys = append(keys, key)
+	}
+	// Sort the keys alphabetically
+	sort.Strings(keys)
 
-			// Find the first non-whitespace character
-			for j, c := range line {
-				if c != ' ' && c != '\t' {
-					indentation = line[:j]
-					break
-				}
-			}
+	// Get the indentation from the original input
+	indentation := ""
+	for i := stringDataIndex + 1; i < len(lines); i++ {
+		line := lines[i]
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
 
-			if indentation != "" {
+		// Find the first non-whitespace character
+		for j, c := range line {
+			if c != ' ' && c != '\t' {
+				indentation = line[:j]
 				break
 			}
 		}
 
-		// If we couldn't determine the indentation, use a single space
-		if indentation == "" {
-			indentation = " "
+		if indentation != "" {
+			break
 		}
+	}
+
+	// If we couldn't determine the indentation, use a single space
+	if indentation == "" {
+		indentation = " "
+	}
+
+	// Iterate through the sorted keys
+	for _, key := range keys {
+		value := secret.StringData[key]
 
 		// Add the key
 		result += "\n" + indentation + key + ": "
