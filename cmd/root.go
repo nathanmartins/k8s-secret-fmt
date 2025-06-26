@@ -62,49 +62,60 @@ type Secret struct {
 }
 
 func processYAML(input []byte) ([]byte, error) {
+	// Parse the original YAML to get the structure
 	var secret Secret
 	err := yaml.Unmarshal(input, &secret)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %v", err)
 	}
 
+	// Create a new YAML with proper indentation
 	var out strings.Builder
 	encoder := yaml.NewEncoder(&out)
-	encoder.SetIndent(0)
+	encoder.SetIndent(2)
 
-	err = encoder.Encode(secret)
+	// Create a modified secret with the same data but without stringData
+	// We'll handle stringData separately to ensure proper formatting
+	modifiedSecret := Secret{
+		ApiVersion: secret.ApiVersion,
+		Kind:       secret.Kind,
+		Metadata:   secret.Metadata,
+		Type:       secret.Type,
+		// Omit StringData as we'll handle it separately
+	}
+
+	err = encoder.Encode(modifiedSecret)
 	if err != nil {
 		return nil, fmt.Errorf("error encoding YAML: %v", err)
 	}
 
+	// Process the YAML line by line
 	result := strings.Builder{}
 	scanner := bufio.NewScanner(strings.NewReader(out.String()))
 
-	inStringData := false
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		if strings.Contains(line, "stringData:") {
-			inStringData = true
-			result.WriteString(line + "\n")
-			continue
-		}
-
-		if inStringData && strings.Contains(line, ":") {
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) == 2 {
-				value := strings.TrimSpace(parts[1])
-				if !strings.HasPrefix(value, "'") {
-					parts[1] = " '" + strings.Trim(value, "'\"") + "'"
-				}
-				line = strings.Join(parts, ":")
-			}
-		}
-
 		result.WriteString(line + "\n")
+	}
 
-		if inStringData && strings.TrimSpace(line) == "" {
-			inStringData = false
+	// Add stringData section if it exists
+	if len(secret.StringData) > 0 {
+		result.WriteString("stringData:\n")
+
+		// Process all stringData fields and add them with proper formatting
+		for key, value := range secret.StringData {
+			// Handle multi-line values
+			if strings.Contains(value, "\n") {
+				// Use YAML literal block style for multi-line values
+				result.WriteString("  " + key + ": |-\n")
+				scanner = bufio.NewScanner(strings.NewReader(value))
+				for scanner.Scan() {
+					result.WriteString("    " + scanner.Text() + "\n")
+				}
+			} else {
+				// Use single quotes for single-line values
+				result.WriteString("  " + key + ": '" + value + "'\n")
+			}
 		}
 	}
 

@@ -33,39 +33,35 @@ stringData:
   api-key: '1234-5678-abcd'
 `,
 		},
-		//		{
-		//			name: "Secret with multi-line value",
-		//			input: `apiVersion: v1
-		//kind: Secret
-		//metadata:
-		//    annotations:
-		//        kustomize.config.k8s.io/needs-hash: "true"
-		//    name: income-bureau-etl-secrets
-		//type: Opaque
-		//stringData:
-		//    config.yaml: |
-		//        app:
-		//          env: production
-		//          host: 0.0.0.0
-		//          port: 50051
-		//          rules_path: 'aggregation-rules.yaml'
-		//`,
-		//			expected: `apiVersion: v1
-		//kind: Secret
-		//metadata:
-		//  annotations:
-		//    kustomize.config.k8s.io/needs-hash: "true"
-		//  name: income-bureau-etl-secrets
-		//type: Opaque
-		//stringData:
-		//  config.yaml: |
-		//    app:
-		//      env: production
-		//      host: 0.0.0.0
-		//      port: 50051
-		//      rules_path: 'aggregation-rules.yaml'
-		//`,
-		//		},
+		{
+			name: "Secret with multi-line value",
+			input: `apiVersion: v1
+kind: Secret
+metadata:
+ annotations:
+  kustomize.config.k8s.io/needs-hash: "true"
+  name: example
+type: Opaque
+stringData:
+ config.yaml: |
+   app:
+    env: production
+    host: 0.0.0.0
+		`,
+			expected: `apiVersion: v1
+kind: Secret
+metadata:
+ annotations:
+  kustomize.config.k8s.io/needs-hash: "true"
+  name: example
+type: Opaque
+stringData:
+ config.yaml: |
+   app:
+    env: production
+    host: 0.0.0.0
+		`,
+		},
 	}
 
 	for _, tt := range tests {
