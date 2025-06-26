@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -62,62 +61,89 @@ type Secret struct {
 }
 
 func processYAML(input []byte) ([]byte, error) {
-	// Parse the original YAML to get the structure
+	// Instead of parsing and re-encoding the YAML, we'll preserve the original format
+	// but just make the necessary modifications to handle the stringData section correctly
+
+	// First, let's parse the YAML to get the structure
+	// Preprocess the input to replace tabs with spaces
+	inputStr := string(input)
+	inputStr = strings.ReplaceAll(inputStr, "\t", "  ")
+
 	var secret Secret
-	err := yaml.Unmarshal(input, &secret)
+	err := yaml.Unmarshal([]byte(inputStr), &secret)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %v", err)
 	}
 
-	// Create a new YAML with proper indentation
-	var out strings.Builder
-	encoder := yaml.NewEncoder(&out)
-	encoder.SetIndent(2)
+	// Now, let's reconstruct the YAML preserving the original format
+	// We'll use the original input as a template and just modify the stringData section
 
-	// Create a modified secret with the same data but without stringData
-	// We'll handle stringData separately to ensure proper formatting
-	modifiedSecret := Secret{
-		ApiVersion: secret.ApiVersion,
-		Kind:       secret.Kind,
-		Metadata:   secret.Metadata,
-		Type:       secret.Type,
-		// Omit StringData as we'll handle it separately
-	}
+	// Split the input into lines
+	lines := strings.Split(inputStr, "\n")
 
-	err = encoder.Encode(modifiedSecret)
-	if err != nil {
-		return nil, fmt.Errorf("error encoding YAML: %v", err)
-	}
-
-	// Process the YAML line by line
-	result := strings.Builder{}
-	scanner := bufio.NewScanner(strings.NewReader(out.String()))
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		result.WriteString(line + "\n")
-	}
-
-	// Add stringData section if it exists
-	if len(secret.StringData) > 0 {
-		result.WriteString("stringData:\n")
-
-		// Process all stringData fields and add them with proper formatting
-		for key, value := range secret.StringData {
-			// Handle multi-line values
-			if strings.Contains(value, "\n") {
-				// Use YAML literal block style for multi-line values
-				result.WriteString("  " + key + ": |-\n")
-				scanner = bufio.NewScanner(strings.NewReader(value))
-				for scanner.Scan() {
-					result.WriteString("    " + scanner.Text() + "\n")
-				}
-			} else {
-				// Use single quotes for single-line values
-				result.WriteString("  " + key + ": '" + value + "'\n")
-			}
+	// Find the stringData section
+	stringDataIndex := -1
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "stringData:" {
+			stringDataIndex = i
+			break
 		}
 	}
 
-	return []byte(result.String()), nil
+	// If there's no stringData section or no stringData in the parsed secret, return the original input
+	if stringDataIndex == -1 || len(secret.StringData) == 0 {
+		return []byte(inputStr), nil
+	}
+
+	// Keep everything up to and including the stringData line
+	result := strings.Join(lines[:stringDataIndex+1], "\n")
+
+	// Add each stringData entry with the correct format
+	for key, value := range secret.StringData {
+		// Get the indentation from the original input
+		indentation := ""
+		for i := stringDataIndex + 1; i < len(lines); i++ {
+			line := lines[i]
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+
+			// Find the first non-whitespace character
+			for j, c := range line {
+				if c != ' ' && c != '\t' {
+					indentation = line[:j]
+					break
+				}
+			}
+
+			if indentation != "" {
+				break
+			}
+		}
+
+		// If we couldn't determine the indentation, use a single space
+		if indentation == "" {
+			indentation = " "
+		}
+
+		// Add the key
+		result += "\n" + indentation + key + ": "
+
+		// Handle multi-line values
+		if strings.Contains(value, "\n") {
+			// Use YAML literal block style for multi-line values
+			result += "|"
+
+			// Add each line of the value with the correct indentation
+			valueLines := strings.Split(value, "\n")
+			for _, valueLine := range valueLines {
+				result += "\n" + indentation + " " + indentation + valueLine
+			}
+		} else {
+			// Use single quotes for single-line values
+			result += "'" + value + "'"
+		}
+	}
+
+	return []byte(result), nil
 }
