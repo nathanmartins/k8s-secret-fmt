@@ -77,6 +77,5 @@ jobs:
       uses: golangci/golangci-lint-action@v8
       with:
         args: "--timeout=2m"
-        skip-pkg-cache: true
-        skip-build-cache: true
+        skip-save-cache: true
         skip-cache: true
