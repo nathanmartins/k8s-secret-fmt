@@ -1,7 +1,8 @@
 name: CI
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger
+  workflow_call: # Call from another workflow
   push:
     branches: [master, main]
     paths:
