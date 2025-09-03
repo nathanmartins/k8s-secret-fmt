@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use: "k8s-secret-fmt",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		input, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
@@ -28,7 +28,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Print(string(output))
+		fmt.Print(string(output)) //nolint:forbidigo // Printing to stdout
 	},
 }
 
@@ -54,7 +54,7 @@ func init() {
 }
 
 type Secret struct {
-	ApiVersion string                 `yaml:"apiVersion"`
+	APIVersion string                 `yaml:"apiVersion"`
 	Kind       string                 `yaml:"kind"`
 	Metadata   map[string]interface{} `yaml:"metadata"`
 	Type       string                 `yaml:"type"`
@@ -73,7 +73,7 @@ func processYAML(input []byte) ([]byte, error) {
 	var secret Secret
 	err := yaml.Unmarshal([]byte(inputStr), &secret)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing YAML: %v", err)
+		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
 
 	// Now, let's reconstruct the YAML preserving the original format

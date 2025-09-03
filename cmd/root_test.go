@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessYAML(t *testing.T) {
@@ -99,7 +100,6 @@ stringData:
 			expectedStr := tt.expected
 
 			assert.Equal(t, strings.TrimSpace(expectedStr), strings.TrimSpace(outputStr))
-
 		})
 	}
 }
